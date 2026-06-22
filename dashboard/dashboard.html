@@ -121,35 +121,46 @@
       </div>
     </aside>
 
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- MAIN VIEW AREA -->
     <main class="main-content">
       
       <!-- HEADER -->
       <header class="app-header">
         <div class="header-title-area">
+          <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fa fa-bars"></i>
+          </button>
           <h2 id="headerTitle">Dashboard</h2>
         </div>
 
         <div class="header-actions">
-          <div class="flex align-center gap-2">
-            <div class="form-group" style="margin-bottom: 0;">
-              <select class="input-control" id="globalAccountSelector" style="width: 180px; padding: 8px 12px;">
-                <option value="all">Combined (All Accounts)</option>
-              </select>
+          <button class="btn btn-secondary btn-sm mobile-filter-toggle" id="mobileFilterToggle">
+            <i class="fa fa-filter"></i>
+          </button>
+          <div class="header-filters-row">
+            <div class="flex align-center gap-2">
+              <div class="form-group" style="margin-bottom: 0;">
+                <select class="input-control" id="globalAccountSelector" style="width: 180px; padding: 8px 12px;">
+                  <option value="all">Combined (All Accounts)</option>
+                </select>
+              </div>
+              <input type="date" id="dateFilterFrom" class="input-control" style="width: 130px; padding: 6px 10px; font-size: 0.8rem;" title="From Date">
+              <span class="text-xs text-muted">to</span>
+              <input type="date" id="dateFilterTo" class="input-control" style="width: 130px; padding: 6px 10px; font-size: 0.8rem;" title="To Date">
+              <button class="btn btn-secondary btn-sm" id="clearDateFilter" title="Clear Date Filter" style="padding: 6px 10px;">
+                <i class="fa fa-times"></i>
+              </button>
             </div>
-            <input type="date" id="dateFilterFrom" class="input-control" style="width: 130px; padding: 6px 10px; font-size: 0.8rem;" title="From Date">
-            <span class="text-xs text-muted">to</span>
-            <input type="date" id="dateFilterTo" class="input-control" style="width: 130px; padding: 6px 10px; font-size: 0.8rem;" title="To Date">
-            <button class="btn btn-secondary btn-sm" id="clearDateFilter" title="Clear Date Filter" style="padding: 6px 10px;">
-              <i class="fa fa-times"></i>
-            </button>
           </div>
           <div id="liveSaveIndicator" class="flex align-center gap-1 text-xs" style="padding: 4px 10px; border-radius: 20px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);">
             <i class="fa fa-circle text-success" style="font-size: 6px;"></i>
             <span class="text-success font-semibold">LIVE</span>
           </div>
           <button class="btn btn-primary btn-sm" id="headerQuickAddBtn">
-            <i class="fa fa-plus"></i> Quick Trade
+            <i class="fa fa-plus"></i> <span class="btn-label-desktop">Quick Trade</span>
           </button>
         </div>
       </header>
@@ -1102,87 +1113,7 @@
           </div>
         </div>
 
-        <div class="card-premium mt-4">
-          <div class="card-title-bar">
-            <h3><i class="fa-solid fa-stethoscope"></i> Data Diagnostics</h3>
-            <span class="text-xs text-muted">Check where your data is stored</span>
-          </div>
-          <div class="flex flex-col gap-3" id="dataDiagnosticsPanel">
-            <div class="text-sm text-muted">Loading diagnostics...</div>
-          </div>
-        </div>
-
-        <div class="card-premium mt-4">
-          <div class="card-title-bar">
-            <h3><i class="fa-solid fa-fire-flame-curved text-accent"></i> Firebase Live Logs</h3>
-            <div class="flex gap-2">
-              <button class="btn btn-secondary btn-sm" id="refreshFirebaseLogsBtn"><i class="fa fa-rotate"></i> Refresh</button>
-              <button class="btn btn-secondary btn-sm" id="clearFirebaseLogsBtn"><i class="fa fa-trash-can"></i> Clear</button>
-            </div>
-          </div>
-          <div id="firebaseLogsPanel" class="flex flex-col gap-1" style="max-height: 240px; overflow-y: auto; font-family: monospace; font-size: 0.72rem;">
-            <div class="text-xs text-muted p-2">No Firebase operations logged yet.</div>
-          </div>
-        </div>
-
-        <div class="card-premium mt-4" id="firestoreRulesFix" style="display:none;">
-          <div class="card-title-bar">
-            <h3><i class="fa-solid fa-shield-halved text-warning"></i> Firestore Rules Fix Required</h3>
-          </div>
-          <p class="text-sm text-muted mb-2">
-            Your Firestore security rules are blocking read/write. To fix:
-          </p>
-          <ol class="text-sm text-muted mb-3" style="padding-left: 20px; line-height: 2;">
-            <li>Go to <strong>Firebase Console</strong> → Your Project → <strong>Firestore Database</strong> → <strong>Rules</strong></li>
-            <li>Replace existing rules with these <strong>test rules</strong>:</li>
-          </ol>
-          <pre style="background:#0d1117; padding:12px; border-radius:8px; font-size:0.72rem; overflow-x:auto; color:#10b981; border:1px solid var(--card-border);">
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}</pre>
-          <p class="text-xs text-muted mt-2">
-            <i class="fa-solid fa-circle-info"></i> These rules allow only the logged-in user to access their own data. After testing, you can tighten them further.
-          </p>
-        </div>
-
-        <div class="card-premium mt-4">
-          <div class="card-title-bar">
-            <h3><i class="fa-solid fa-arrows-rotate text-success"></i> Manual Sync</h3>
-          </div>
-          <p class="text-sm text-muted mb-4">
-            Force push all local data to Firebase, or pull all Firebase data to this browser.
-          </p>
-          <div class="flex gap-3">
-            <button class="btn btn-primary" id="pushToFirebaseBtn" style="flex:1;">
-              <i class="fa fa-cloud-arrow-up"></i> Push Local → Firebase
-            </button>
-            <button class="btn btn-secondary" id="pullFromFirebaseBtn" style="flex:1;">
-              <i class="fa fa-cloud-arrow-down"></i> Pull Firebase → Local
-            </button>
-          </div>
-        </div>
-
-        <div class="card-premium mt-4">
-          <div class="card-title-bar">
-            <h3><i class="fa-solid fa-cloud-arrow-up"></i> Firebase Authentication Sync</h3>
-          </div>
-          <p class="text-sm text-muted mb-4">
-            Connect your local journal to our Firebase Cloud database to keep multiple devices synced automatically and store files safely.
-          </p>
-          <div class="flex align-center gap-4 flex-wrap">
-            <div id="firebaseConnectionBadge" class="badge badge-loss">Firebase Offline</div>
-            <button class="btn btn-primary" id="openAuthModalBtn">Sign Up / Log In with Firebase</button>
-            <button class="btn btn-secondary" id="googleLoginBtn" style="background:#ea4335; border:none; color:white;"><i class="fa-brands fa-google"></i> Google Login</button>
-            <button class="btn btn-secondary" id="syncFirebaseBtn" style="display:none;"><i class="fa fa-sync"></i> Sync Data Now</button>
-          </div>
-        </div>
       </div>
-
     </main>
   </div>
 

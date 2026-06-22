@@ -339,6 +339,8 @@ const els = {
 // --- INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
   setupNavigation();
+  setupMobileSidebar();
+  setupMobileFilterToggle();
   setupEventListeners();
   checkAuthSession();
 });
@@ -769,25 +771,29 @@ function setupEventListeners() {
   });
 
   // Sync settings/Auth modal button
-  els.openAuthModalBtn.addEventListener("click", () => {
-    showAuthScreen();
-  });
+  if (els.openAuthModalBtn) {
+    els.openAuthModalBtn.addEventListener("click", () => {
+      showAuthScreen();
+    });
+  }
 
-  els.syncFirebaseBtn.addEventListener("click", async () => {
-    els.syncFirebaseBtn.disabled = true;
-    els.syncFirebaseBtn.innerHTML = '<i class="fa fa-sync fa-spin"></i> Syncing...';
-    
-    const synced = await syncLocalDataToFirestore();
-    if (synced) {
-      showNotification("Data successfully synced with Firebase!", "success");
-      await loadInitialData();
-    } else {
-      showNotification("Sync failed. Check database permissions.", "danger");
-    }
-    
-    els.syncFirebaseBtn.disabled = false;
-    els.syncFirebaseBtn.innerHTML = '<i class="fa fa-sync"></i> Sync Data Now';
-  });
+  if (els.syncFirebaseBtn) {
+    els.syncFirebaseBtn.addEventListener("click", async () => {
+      els.syncFirebaseBtn.disabled = true;
+      els.syncFirebaseBtn.innerHTML = '<i class="fa fa-sync fa-spin"></i> Syncing...';
+      
+      const synced = await syncLocalDataToFirestore();
+      if (synced) {
+        showNotification("Data successfully synced with Firebase!", "success");
+        await loadInitialData();
+      } else {
+        showNotification("Sync failed. Check database permissions.", "danger");
+      }
+      
+      els.syncFirebaseBtn.disabled = false;
+      els.syncFirebaseBtn.innerHTML = '<i class="fa fa-sync"></i> Sync Data Now';
+    });
+  }
 
   // Export Data Backup Settings
   els.settingsExportBackupBtn.addEventListener("click", async () => {
@@ -961,6 +967,46 @@ function handleScreenshotFile(file) {
   reader.readAsDataURL(file);
 }
 
+// Set up Mobile Sidebar Toggle
+function setupMobileSidebar() {
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  const sidebar = document.querySelector(".sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+  if (sidebarToggle && sidebar && sidebarOverlay) {
+    sidebarToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("active");
+      sidebarOverlay.classList.toggle("active");
+      document.body.style.overflow = sidebar.classList.contains("active") ? "hidden" : "";
+    });
+
+    sidebarOverlay.addEventListener("click", () => {
+      sidebar.classList.remove("active");
+      sidebarOverlay.classList.remove("active");
+      document.body.style.overflow = "";
+    });
+  }
+}
+
+// Set up Mobile Filter Toggle
+function setupMobileFilterToggle() {
+  const filterToggle = document.getElementById("mobileFilterToggle");
+  const filtersRow = document.querySelector(".header-filters-row");
+
+  if (filterToggle && filtersRow) {
+    filterToggle.addEventListener("click", () => {
+      filtersRow.classList.toggle("active");
+    });
+
+    // Close filters when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!filterToggle.contains(e.target) && !filtersRow.contains(e.target)) {
+        filtersRow.classList.remove("active");
+      }
+    });
+  }
+}
+
 // Set up App Tab Navigation
 function setupNavigation() {
   document.querySelectorAll(".sidebar-item").forEach(item => {
@@ -974,6 +1020,13 @@ function setupNavigation() {
 
 function switchTab(pageId) {
   state.currentTab = pageId;
+
+  // Close mobile sidebar if open
+  const sidebar = document.querySelector(".sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+  if (sidebar) sidebar.classList.remove("active");
+  if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+  document.body.style.overflow = "";
   
   // Hide active page
   document.querySelectorAll(".page-container").forEach(page => {
@@ -1041,24 +1094,32 @@ async function initAppUI() {
     els.avatarInitial.innerText = (state.user.displayName || state.user.email).charAt(0).toUpperCase();
     els.profileInputEmail.value = state.user.email;
     
-    els.connectionModeText.innerText = "Firebase Cloud Sync Mode";
-    els.connectionModeText.className = "font-semibold text-success";
-    els.firebaseConnectionBadge.className = "badge badge-win";
-    els.firebaseConnectionBadge.innerText = "Firebase Connected";
-    els.openAuthModalBtn.style.display = "none";
-    els.syncFirebaseBtn.style.display = "inline-block";
+    if (els.connectionModeText) {
+      els.connectionModeText.innerText = "Firebase Cloud Sync Mode";
+      els.connectionModeText.className = "font-semibold text-success";
+    }
+    if (els.firebaseConnectionBadge) {
+      els.firebaseConnectionBadge.className = "badge badge-win";
+      els.firebaseConnectionBadge.innerText = "Firebase Connected";
+    }
+    if (els.openAuthModalBtn) els.openAuthModalBtn.style.display = "none";
+    if (els.syncFirebaseBtn) els.syncFirebaseBtn.style.display = "inline-block";
   } else {
     els.profileName.innerText = localName;
     els.profileEmail.innerText = "Local Sandbox Mode";
     els.avatarInitial.innerText = localName.charAt(0).toUpperCase();
     els.profileInputEmail.value = "local_sandbox@offline";
     
-    els.connectionModeText.innerText = "LocalStorage Sandbox Mode";
-    els.connectionModeText.className = "font-semibold text-warning";
-    els.firebaseConnectionBadge.className = "badge badge-loss";
-    els.firebaseConnectionBadge.innerText = "Firebase Offline";
-    els.openAuthModalBtn.style.display = "inline-block";
-    els.syncFirebaseBtn.style.display = "none";
+    if (els.connectionModeText) {
+      els.connectionModeText.innerText = "LocalStorage Sandbox Mode";
+      els.connectionModeText.className = "font-semibold text-warning";
+    }
+    if (els.firebaseConnectionBadge) {
+      els.firebaseConnectionBadge.className = "badge badge-loss";
+      els.firebaseConnectionBadge.innerText = "Firebase Offline";
+    }
+    if (els.openAuthModalBtn) els.openAuthModalBtn.style.display = "inline-block";
+    if (els.syncFirebaseBtn) els.syncFirebaseBtn.style.display = "none";
   }
 
   // Load database items
