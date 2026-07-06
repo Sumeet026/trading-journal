@@ -49,8 +49,26 @@ function saveLocal(key, data) {
   try {
     localStorage.setItem(userKey(key), JSON.stringify(data));
   } catch (e) {
-    console.error("localStorage write error for", key, e);
+    if (e.name === "QuotaExceededError") {
+      console.error("localStorage FULL! Cannot save:", key, "— Free up space by deleting old trades or exporting data.");
+    } else {
+      console.error("localStorage write error for", key, e);
+    }
   }
+}
+
+export function getLocalStorageUsage() {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k) total += localStorage.getItem(k).length;
+  }
+  return {
+    usedBytes: total * 2,
+    usedMB: ((total * 2) / (1024 * 1024)).toFixed(2),
+    limitMB: 5,
+    percentUsed: (((total * 2) / (5 * 1024 * 1024)) * 100).toFixed(1)
+  };
 }
 
 // Migrate old non-scoped localStorage data to current user's scoped keys
@@ -61,15 +79,24 @@ export function migrateToUserScopedStorage() {
 
   const legacyKeys = ["tj_accounts", "tj_trades", "tj_notes", "tj_goals", "tj_checklist", "tj_user_name", "tj_saved_strategies", "tj_saved_setups", "tj_backtests"];
   for (const key of legacyKeys) {
-    const legacyData = localStorage.getItem(key);
-    if (legacyData) {
-      const userScopedKey = `tj_${uid}_${key}`;
-      // Only migrate if user-scoped key is empty (first login for this user)
-      if (!localStorage.getItem(userScopedKey)) {
-        localStorage.setItem(userScopedKey, legacyData);
+    try {
+      const legacyData = localStorage.getItem(key);
+      if (legacyData) {
+        const userScopedKey = `tj_${uid}_${key}`;
+        // Only migrate if user-scoped key is empty (first login for this user)
+        if (!localStorage.getItem(userScopedKey)) {
+          localStorage.setItem(userScopedKey, legacyData);
+        }
+        // Always remove legacy key so it never leaks to another user
+        localStorage.removeItem(key);
       }
-      // Always remove legacy key so it never leaks to another user
-      localStorage.removeItem(key);
+    } catch (e) {
+      console.error("Migration failed for key:", key, e.message);
+      // If quota exceeded, try to free space by removing the legacy key anyway
+      if (e.name === "QuotaExceededError") {
+        try { localStorage.removeItem(key); } catch (_) {}
+        console.warn("localStorage quota exceeded during migration. Consider exporting and re-importing data.");
+      }
     }
   }
 }
