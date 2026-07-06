@@ -850,3 +850,108 @@ export function drawMonteCarloSimulation(canvasId, trades, initialBalance = 1000
     }
   });
 }
+
+// ==============================
+// --- BACKTEST CHARTS ---
+// ==============================
+export function renderBtWinLossPie(wins, losses, breakEven) {
+  destroyChartIfExists("btWinLossChart");
+  const canvas = document.getElementById("btWinLossChart");
+  if (!canvas) return;
+
+  const total = wins + losses + breakEven;
+  if (total === 0) return;
+
+  charts["btWinLossChart"] = new Chart(canvas, {
+    type: "doughnut",
+    data: {
+      labels: ["Wins", "Losses", "Break-even"],
+      datasets: [{
+        data: [wins, losses, breakEven],
+        backgroundColor: ["rgba(16, 185, 129, 0.8)", "rgba(239, 68, 68, 0.8)", "rgba(245, 158, 11, 0.8)"],
+        borderColor: ["#10b981", "#ef4444", "#f59e0b"],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "65%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { color: "#94a3b8", font: { size: 11 }, padding: 12 }
+        },
+        tooltip: {
+          backgroundColor: "#12161f",
+          titleColor: "#f8fafc",
+          bodyColor: "#94a3b8",
+          callbacks: {
+            label: function(ctx) {
+              const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+              return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+export function renderBtStrategyPerformance(labels, wins, losses) {
+  destroyChartIfExists("btStrategyChart");
+  const canvas = document.getElementById("btStrategyChart");
+  if (!canvas) return;
+
+  if (labels.length === 0) return;
+
+  charts["btStrategyChart"] = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Wins",
+          data: wins,
+          backgroundColor: "rgba(16, 185, 129, 0.7)",
+          borderColor: "#10b981",
+          borderWidth: 1,
+          borderRadius: 4
+        },
+        {
+          label: "Losses",
+          data: losses,
+          backgroundColor: "rgba(239, 68, 68, 0.7)",
+          borderColor: "#ef4444",
+          borderWidth: 1,
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: "y",
+      plugins: {
+        legend: {
+          labels: { color: "#94a3b8", font: { size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: "#12161f",
+          titleColor: "#f8fafc",
+          bodyColor: "#94a3b8"
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: "rgba(255, 255, 255, 0.04)" },
+          ticks: { color: "#94a3b8", stepSize: 1 }
+        },
+        y: {
+          grid: { color: "rgba(255, 255, 255, 0.04)" },
+          ticks: { color: "#94a3b8" }
+        }
+      }
+    }
+  });
+}

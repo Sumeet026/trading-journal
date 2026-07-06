@@ -261,11 +261,8 @@ body {
 .page-container {
   padding: 32px;
   overflow-y: auto;
-  position: absolute;
-  top: 70px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  flex: 1;
+  min-height: 0;
   display: none;
 }
 
@@ -1447,8 +1444,6 @@ select.input-control option:selected {
   /* --- PAGE CONTAINER --- */
   .page-container {
     padding: 12px;
-    position: relative;
-    top: 56px;
   }
 
   /* --- GRID SYSTEM --- */
@@ -1728,7 +1723,6 @@ select.input-control option:selected {
 
   .page-container {
     padding: 8px;
-    top: 50px;
   }
 
   .stat-card {

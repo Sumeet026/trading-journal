@@ -24,13 +24,20 @@ function getUserId() {
   return null;
 }
 
+// Returns a user-scoped localStorage key so each user gets isolated data
+function userKey(key) {
+  const uid = getUserId();
+  if (uid) return `tj_${uid}_${key}`;
+  return `tj_${key}`;
+}
+
 function generateId() {
   return "_" + Math.random().toString(36).substr(2, 9);
 }
 
 function getLocal(key, defaultVal = []) {
   try {
-    const data = localStorage.getItem(key);
+    const data = localStorage.getItem(userKey(key));
     return data ? JSON.parse(data) : defaultVal;
   } catch (e) {
     console.error("localStorage read error for", key, e);
@@ -40,10 +47,44 @@ function getLocal(key, defaultVal = []) {
 
 function saveLocal(key, data) {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
+    localStorage.setItem(userKey(key), JSON.stringify(data));
   } catch (e) {
     console.error("localStorage write error for", key, e);
   }
+}
+
+// Migrate old non-scoped localStorage data to current user's scoped keys
+// and clean up so old data doesn't leak to new users
+export function migrateToUserScopedStorage() {
+  const uid = getUserId();
+  if (!uid) return;
+
+  const legacyKeys = ["tj_accounts", "tj_trades", "tj_notes", "tj_goals", "tj_checklist", "tj_user_name", "tj_saved_strategies", "tj_saved_setups", "tj_backtests"];
+  for (const key of legacyKeys) {
+    const legacyData = localStorage.getItem(key);
+    if (legacyData) {
+      const userScopedKey = `tj_${uid}_${key}`;
+      // Only migrate if user-scoped key is empty (first login for this user)
+      if (!localStorage.getItem(userScopedKey)) {
+        localStorage.setItem(userScopedKey, legacyData);
+      }
+      // Always remove legacy key so it never leaks to another user
+      localStorage.removeItem(key);
+    }
+  }
+}
+
+// Clear all user-scoped localStorage (call on logout)
+export function clearUserScopedStorage() {
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    // Keep global keys like tj_theme, tj_local_mode - only remove user-scoped data
+    if (k && k.startsWith("tj_") && k !== "tj_theme" && k !== "tj_local_mode") {
+      keysToRemove.push(k);
+    }
+  }
+  keysToRemove.forEach(k => localStorage.removeItem(k));
 }
 
 // --- FIREBASE STATUS LOG ---
@@ -142,7 +183,8 @@ export async function pushLocalToFirebase() {
     { local: "tj_accounts", fb: ["users", uid, "accounts"] },
     { local: "tj_trades", fb: ["users", uid, "trades"] },
     { local: "tj_notes", fb: ["users", uid, "notes"] },
-    { local: "tj_goals", fb: ["users", uid, "goals"] }
+    { local: "tj_goals", fb: ["users", uid, "goals"] },
+    { local: "tj_backtests", fb: ["users", uid, "backtests"] }
   ];
 
   for (const col of collections) {
@@ -192,7 +234,8 @@ export async function pullFirebaseToLocal() {
     { local: "tj_accounts", fb: ["users", uid, "accounts"] },
     { local: "tj_trades", fb: ["users", uid, "trades"] },
     { local: "tj_notes", fb: ["users", uid, "notes"] },
-    { local: "tj_goals", fb: ["users", uid, "goals"] }
+    { local: "tj_goals", fb: ["users", uid, "goals"] },
+    { local: "tj_backtests", fb: ["users", uid, "backtests"] }
   ];
 
   for (const col of collections) {
@@ -305,7 +348,7 @@ export async function saveAccount(account) {
     createdAt: account.createdAt || new Date().toISOString()
   };
 
-  return await dualWrite("tj_accounts", ["users", uid || "_local", "accounts"], accountData, accId);
+  return await dualWrite("tj_accounts", ["users", uid, "accounts"], accountData, accId);
 }
 
 export async function archiveAccount(accountId, archived) {
@@ -426,11 +469,11 @@ export async function saveTrade(trade) {
     updatedAt: new Date().toISOString()
   };
 
-  return await dualWrite("tj_trades", ["users", uid || "_local", "trades"], tradeData, tradeId);
+  return await dualWrite("tj_trades", ["users", uid, "trades"], tradeData, tradeId);
 }
 
 export async function deleteTrade(tradeId) {
-  return await dualDelete("tj_trades", ["users", getUserId() || "_local", "trades"], tradeId);
+  return await dualDelete("tj_trades", ["users", getUserId(), "trades"], tradeId);
 }
 
 // ==============================
@@ -474,11 +517,11 @@ export async function saveNote(note) {
     updatedAt: new Date().toISOString()
   };
 
-  return await dualWrite("tj_notes", ["users", uid || "_local", "notes"], noteData, noteId);
+  return await dualWrite("tj_notes", ["users", uid, "notes"], noteData, noteId);
 }
 
 export async function deleteNote(noteId) {
-  return await dualDelete("tj_notes", ["users", getUserId() || "_local", "notes"], noteId);
+  return await dualDelete("tj_notes", ["users", getUserId(), "notes"], noteId);
 }
 
 // ==============================
@@ -528,11 +571,11 @@ export async function saveGoal(goal) {
     updatedAt: new Date().toISOString()
   };
 
-  return await dualWrite("tj_goals", ["users", uid || "_local", "goals"], goalData, goalId);
+  return await dualWrite("tj_goals", ["users", uid, "goals"], goalData, goalId);
 }
 
 export async function deleteGoal(goalId) {
-  return await dualDelete("tj_goals", ["users", getUserId() || "_local", "goals"], goalId);
+  return await dualDelete("tj_goals", ["users", getUserId(), "goals"], goalId);
 }
 
 // ==============================
@@ -588,6 +631,61 @@ export async function saveChecklist(items) {
 }
 
 // ==============================
+// --- BACKTESTS ---
+// ==============================
+export async function getBacktests() {
+  const uid = getUserId();
+  const localBacktests = getLocal("tj_backtests");
+
+  if (uid) {
+    try {
+      const q = query(collection(db, "users", uid, "backtests"));
+      const snap = await getDocs(q);
+      const fbList = [];
+      snap.forEach(d => fbList.push({ id: d.id, ...d.data() }));
+
+      const merged = mergeFirebaseAndLocal(fbList, localBacktests);
+      saveLocal("tj_backtests", merged);
+      return merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } catch (e) {
+      logFirebase("getBacktests", "error", e.message);
+    }
+  }
+
+  return localBacktests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export async function saveBacktest(backtest) {
+  const uid = getUserId();
+  const btId = backtest.id || "bt_" + generateId();
+
+  const btData = {
+    strategy: backtest.strategy || "None",
+    asset: backtest.asset ? backtest.asset.toUpperCase() : "EURUSD",
+    type: backtest.type || "Buy",
+    entryPrice: parseFloat(backtest.entryPrice) || 0,
+    exitPrice: parseFloat(backtest.exitPrice) || 0,
+    stopLoss: parseFloat(backtest.stopLoss) || 0,
+    takeProfit: parseFloat(backtest.takeProfit) || 0,
+    quantity: parseFloat(backtest.quantity) || 0,
+    timeframe: backtest.timeframe || "1H",
+    result: backtest.result || "Break-even",
+    pnl: parseFloat(backtest.pnl) || 0,
+    rMultiple: parseFloat(backtest.rMultiple) || 0,
+    date: backtest.date || new Date().toISOString().split("T")[0],
+    notes: backtest.notes || "",
+    screenshotUrl: backtest.screenshotUrl || "",
+    createdAt: backtest.createdAt || new Date().toISOString()
+  };
+
+  return await dualWrite("tj_backtests", ["users", uid, "backtests"], btData, btId);
+}
+
+export async function deleteBacktest(backtestId) {
+  return await dualDelete("tj_backtests", ["users", getUserId(), "backtests"], backtestId);
+}
+
+// ==============================
 // --- BULK IMPORT / EXPORT ---
 // ==============================
 export async function exportData() {
@@ -597,8 +695,9 @@ export async function exportData() {
     notes: getLocal("tj_notes"),
     goals: getLocal("tj_goals"),
     checklist: getLocal("tj_checklist"),
+    backtests: getLocal("tj_backtests"),
     exportedAt: new Date().toISOString(),
-    version: "2.0"
+    version: "2.1"
   };
 }
 
@@ -612,6 +711,7 @@ export async function importData(data) {
   if (Array.isArray(data.notes)) saveLocal("tj_notes", data.notes);
   if (Array.isArray(data.goals)) saveLocal("tj_goals", data.goals);
   if (Array.isArray(data.checklist)) saveLocal("tj_checklist", data.checklist);
+  if (Array.isArray(data.backtests)) saveLocal("tj_backtests", data.backtests);
 
   // Also push to Firebase if logged in
   const uid = getUserId();

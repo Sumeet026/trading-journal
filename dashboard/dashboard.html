@@ -115,6 +115,9 @@
         <li class="sidebar-item" data-target="historyPage">
           <a href="#"><i class="fa-solid fa-list-check"></i><span>Trade History</span></a>
         </li>
+        <li class="sidebar-item" data-target="backtestPage">
+          <a href="#"><i class="fa-solid fa-flask text-accent"></i><span>Backtest Journal</span></a>
+        </li>
         <li class="sidebar-item" data-target="analyticsPage">
           <a href="#"><i class="fa-solid fa-chart-column"></i><span>Analytics Hub</span></a>
         </li>
@@ -1121,6 +1124,200 @@
         </div>
 
       </div>
+
+      <!-- ==================== VIEW: BACKTEST JOURNAL ==================== -->
+      <div id="backtestPage" class="page-container">
+        <!-- Stats Row -->
+        <div class="grid-cols-4 mb-4">
+          <div class="stat-card">
+            <i class="fa-solid fa-flask stat-icon text-accent"></i>
+            <span class="stat-label">Total Backtests</span>
+            <span class="stat-value" id="btStatTotal">0</span>
+          </div>
+          <div class="stat-card">
+            <i class="fa-solid fa-trophy stat-icon text-success"></i>
+            <span class="stat-label">Win Rate</span>
+            <span class="stat-value text-success" id="btStatWinRate">0%</span>
+          </div>
+          <div class="stat-card">
+            <i class="fa-solid fa-chart-line stat-icon text-warning"></i>
+            <span class="stat-label">Avg R-Multiple</span>
+            <span class="stat-value" id="btStatAvgR">0.00R</span>
+          </div>
+          <div class="stat-card">
+            <i class="fa-solid fa-scale-balanced stat-icon text-accent"></i>
+            <span class="stat-label">Profit Factor</span>
+            <span class="stat-value" id="btStatPF">0.00</span>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid-cols-12 mb-4">
+          <div class="card-premium col-span-4">
+            <div class="card-title-bar">
+              <h3><i class="fa-solid fa-chart-pie text-accent"></i> Win / Loss</h3>
+            </div>
+            <div class="chart-container-wrapper" style="height: 220px;">
+              <canvas id="btWinLossChart"></canvas>
+            </div>
+          </div>
+          <div class="card-premium col-span-8">
+            <div class="card-title-bar">
+              <h3><i class="fa-solid fa-chart-bar text-warning"></i> Strategy Performance</h3>
+            </div>
+            <div class="chart-container-wrapper" style="height: 220px;">
+              <canvas id="btStrategyChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Backtest Form + History: side by side with proper width -->
+        <div class="grid-cols-12 mb-4">
+          <!-- Add Backtest Form -->
+          <div class="card-premium col-span-6" style="overflow-y: auto; max-height: 620px;">
+            <div class="card-title-bar">
+              <h3 id="btFormTitle"><i class="fa-solid fa-plus-circle text-accent"></i> Log Backtest</h3>
+              <button class="btn btn-secondary btn-sm" id="resetBtFormBtn">Clear</button>
+            </div>
+            <form id="backtestForm" onsubmit="event.preventDefault();">
+              <input type="hidden" id="btEditId" value="">
+
+              <div class="grid-cols-2 mb-3">
+                <div class="form-group">
+                  <label for="btAsset">Asset *</label>
+                  <input type="text" id="btAsset" class="input-control" placeholder="EURUSD, BTC, NIFTY" required>
+                </div>
+                <div class="form-group">
+                  <label>Direction *</label>
+                  <div class="flex gap-2">
+                    <div id="btTypeBuy" class="toggle-btn active-buy" onclick="setBtType('Buy')">BUY</div>
+                    <div id="btTypeSell" class="toggle-btn" onclick="setBtType('Sell')">SELL</div>
+                  </div>
+                  <input type="hidden" id="btType" value="Buy">
+                </div>
+              </div>
+
+              <div class="grid-cols-2 mb-3">
+                <div class="form-group">
+                  <label for="btEntryPrice">Entry Price</label>
+                  <input type="number" step="0.00001" id="btEntryPrice" class="input-control" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="btExitPrice">Exit Price</label>
+                  <input type="number" step="0.00001" id="btExitPrice" class="input-control" placeholder="0.00">
+                </div>
+              </div>
+
+              <div class="grid-cols-3 mb-3">
+                <div class="form-group">
+                  <label for="btStopLoss">Stop Loss</label>
+                  <input type="number" step="0.00001" id="btStopLoss" class="input-control" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="btTakeProfit">Take Profit</label>
+                  <input type="number" step="0.00001" id="btTakeProfit" class="input-control" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="btQuantity">Qty / Lot</label>
+                  <input type="number" step="0.00001" id="btQuantity" class="input-control" placeholder="0">
+                </div>
+              </div>
+
+              <div class="grid-cols-2 mb-3">
+                <div class="form-group">
+                  <label for="btStrategy">Strategy *</label>
+                  <input type="text" id="btStrategy" class="input-control" placeholder="e.g. Breakout, Scalping" required>
+                </div>
+                <div class="form-group">
+                  <label for="btTimeframe">Timeframe</label>
+                  <select id="btTimeframe" class="input-control">
+                    <option value="1M">1 Minute</option>
+                    <option value="5M">5 Minutes</option>
+                    <option value="15M">15 Minutes</option>
+                    <option value="1H" selected>1 Hour</option>
+                    <option value="4H">4 Hours</option>
+                    <option value="1D">1 Day</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid-cols-2 mb-3">
+                <div class="form-group">
+                  <label for="btResult">Result *</label>
+                  <select id="btResult" class="input-control" required>
+                    <option value="Win">Win</option>
+                    <option value="Loss">Loss</option>
+                    <option value="Break-even">Break-even</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="btRMultiple">R-Multiple</label>
+                  <input type="number" step="0.01" id="btRMultiple" class="input-control" placeholder="e.g. 2.5">
+                </div>
+              </div>
+
+              <div class="form-group mb-3">
+                <label for="btNotes">Notes / Observations</label>
+                <textarea id="btNotes" class="input-control" rows="2" placeholder="What did you observe? What worked?"></textarea>
+              </div>
+
+              <!-- Screenshot Upload -->
+              <div class="form-group mb-3">
+                <label>Screenshot</label>
+                <div class="screenshot-upload-area" id="btDropZone" style="padding: 14px;">
+                  <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.2rem; color: var(--primary); margin-bottom: 2px;"></i>
+                  <p class="text-xs font-semibold">Click or Drag & Drop</p>
+                  <p class="text-xs text-muted">PNG, JPG. Max 2MB</p>
+                  <input type="file" id="btScreenshot" style="display: none;" accept="image/*">
+                </div>
+                <div class="screenshot-preview-container" id="btScreenshotPreviewWrapper">
+                  <img id="btScreenshotPreview" src="" alt="Screenshot Preview">
+                  <button type="button" class="screenshot-remove-btn" id="btRemoveScreenshotBtn"><i class="fa fa-times"></i></button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width:100%;" id="btSaveBtn">
+                <i class="fa fa-save"></i> Save Backtest
+              </button>
+            </form>
+          </div>
+
+          <!-- Backtest History Table -->
+          <div class="card-premium col-span-6">
+            <div class="card-title-bar">
+              <h3><i class="fa-solid fa-clock-rotate-left text-warning"></i> Backtest History</h3>
+              <div class="flex gap-2">
+                <input type="text" id="btSearchInput" class="input-control" placeholder="Search..." style="width: 160px; padding: 6px 12px; font-size: 0.8rem;">
+                <select id="btFilterResult" class="input-control" style="width: 120px; padding: 6px 12px; font-size: 0.8rem;">
+                  <option value="all">All</option>
+                  <option value="Win">Wins</option>
+                  <option value="Loss">Losses</option>
+                  <option value="Break-even">Break-even</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrapper" style="max-height: 570px;">
+              <table class="table-custom" id="btHistoryTable">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Asset</th>
+                    <th>Strategy</th>
+                    <th>Direction</th>
+                    <th>Result</th>
+                    <th>R-Multiple</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="btHistoryBody">
+                  <tr><td colspan="7" class="text-center text-muted p-4">No backtests logged yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -1434,6 +1631,31 @@
   </div>
 
   <!-- App scripts module loads -->
+  <script>
+    // Check if running via file:// protocol (modules won't work)
+    if (location.protocol === 'file:') {
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('appMain').style.display = 'flex';
+        document.getElementById('appMain').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#f87171;font-family:Inter,sans-serif;text-align:center;padding:2rem;"><div><h1 style="font-size:1.5rem;margin-bottom:1rem;">Cannot run from file:// protocol</h1><p style="color:#94a3b8;margin-bottom:1rem;">ES Modules require a local server.</p><p style="color:#94a3b8;font-size:0.85rem;margin-bottom:1.5rem;">In VS Code, install "Live Server" extension, then right-click this file → "Open with Live Server"</p></div></div>';
+      });
+    }
+    // Fallback: if modules fail to load after 5s, show error
+    window.__moduleLoadError = false;
+    window.addEventListener('error', function(e) {
+      if (e.target && e.target.tagName === 'SCRIPT' && e.target.type === 'module') {
+        window.__moduleLoadError = true;
+        console.error('Module failed to load:', e.target.src, e);
+      }
+    }, true);
+    setTimeout(function() {
+      if (window.__moduleLoadError && location.protocol !== 'file:') {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('appMain').style.display = 'flex';
+        document.getElementById('appMain').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#f87171;font-family:Inter,sans-serif;text-align:center;padding:2rem;"><div><h1 style="font-size:1.5rem;margin-bottom:1rem;">Failed to load application modules</h1><p style="color:#94a3b8;margin-bottom:1rem;">Open browser console (F12) to see the error.</p><p style="color:#94a3b8;font-size:0.85rem;">Make sure you are running a local server (e.g. Live Server in VS Code).</p><button onclick="location.reload()" style="margin-top:1rem;padding:8px 24px;background:#6366f1;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;">Retry</button></div></div>';
+      }
+    }, 5000);
+  </script>
   <script type="module" src="../js/app.js"></script>
 
 
