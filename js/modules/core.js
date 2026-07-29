@@ -707,6 +707,15 @@ export async function initAppUI() {
   
   // Initialize theme
   initThemes();
+
+  // Global Account Selector listener
+  els.globalAccountSelector.addEventListener("change", (e) => {
+    const val = e.target.value;
+    state.activeAccountId = val;
+    filterDataAndRefresh();
+    const label = val === "all" ? "All Accounts (Combined)" : state.accounts.find(a => a.id === val)?.name || val;
+    showNotification(`Switched to: ${label}`, "success", 2500);
+  });
 }
 
 export async function loadInitialData() {
