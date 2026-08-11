@@ -93,9 +93,7 @@ export function switchTab(pageId) {
     entryPage: "Journal Trade Entry",
     historyPage: "Trade History Log",
     backtestPage: "Backtest Journal",
-    analyticsPage: "Advanced Analytics Hub",
-    aiCoachPage: "AI Trading Coach Hub",
-    psychologyPage: "Psychology & Discipline Hub",
+    sessionPage: "Session Analysis",
     notesPage: "Daily Journal Notes",
     calendarPage: "Trading Calendar",
     settingsPage: "Settings & Appearance"

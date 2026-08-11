@@ -134,6 +134,41 @@ window.setTradeType = function(type) {
   }
 };
 
+// --- AUTO-DETECT SESSION FROM ENTRY TIME (IST) ---
+function detectSessionFromTime(timeStr) {
+  if (!timeStr) return "None";
+  const parts = timeStr.split(":");
+  const hours = parseInt(parts[0]);
+  const minutes = parseInt(parts[1]) || 0;
+  const timeInMinutes = hours * 60 + minutes;
+
+  // Session definitions in IST (minutes from midnight)
+  // Tokyo: 5:30 AM (330) to 11:30 AM (690)
+  // London: 12:00 PM (720) to 7:00 PM (1140)
+  // New York: 1:00 PM (780) to 7:00 PM (1140)
+  // Asian/Osaka: 7:00 PM (1140) to 1:30 AM (90 next day, so > 1140 or < 90)
+  // Overlap: London + NY overlap (1:00 PM to 7:00 PM = 780 to 1140)
+
+  if (timeInMinutes >= 330 && timeInMinutes < 690) return "Tokyo";
+  if (timeInMinutes >= 780 && timeInMinutes < 1140) return "Overlap"; // NY overlap with London
+  if (timeInMinutes >= 720 && timeInMinutes < 780) return "London"; // London only (before NY opens)
+  if (timeInMinutes >= 1140 || timeInMinutes < 90) return "Asian"; // 7 PM to 1:30 AM
+
+  return "None";
+}
+
+// Auto-detect session when entry time changes
+function setupAutoSessionDetect() {
+  if (els.tradeEntryTime) {
+    els.tradeEntryTime.addEventListener("change", () => {
+      if (els.tradeSession.value === "auto") {
+        const detected = detectSessionFromTime(els.tradeEntryTime.value);
+        showNotification(`Auto-detected session: ${detected}`, "info");
+      }
+    });
+  }
+}
+
 // --- POSITION SIZE CALCULATOR ---
 window.calculatePositionSize = function() {
   const balance = parseFloat(els.calcBalance.value) || 0;
@@ -187,11 +222,14 @@ window.loadTradeIntoForm = function(tradeId) {
   els.tradeQuantity.value = trade.quantity;
   els.tradeCommission.value = trade.commission || 0;
   els.tradeDate.value = trade.date;
+  els.tradeEntryTime.value = trade.entryTime || "";
+  els.tradeExitTime.value = trade.exitTime || "";
   els.tradeStrategy.value = trade.strategy || "";
   els.tradeSetup.value = trade.setup || "";
   renderStrategies();
   renderSetups();
   els.tradeTimeframe.value = trade.timeframe;
+  els.tradeSession.value = trade.session || "None";
   els.tradeEmotionBefore.value = trade.emotionBefore;
   els.tradeEmotionAfter.value = trade.emotionAfter;
   els.tradeConfidence.value = trade.confidence;
@@ -225,9 +263,12 @@ function resetTradeForm() {
   els.tradeForm.reset();
   setTradeType("Buy");
   els.tradeDate.value = new Date().toISOString().split("T")[0];
-
+  els.tradeEntryTime.value = "";
+  els.tradeExitTime.value = "";
+  els.tradeSession.value = "auto";
   els.tradeStrategy.value = "";
   els.tradeSetup.value = "";
+  els.tradeSession.value = "None";
   renderStrategies();
   renderSetups();
 
@@ -377,6 +418,13 @@ function initTradeEntry() {
     });
 
     const tradeId = els.editTradeId.value || null;
+    
+    // Auto-detect session from entry time if set to "auto"
+    let finalSession = els.tradeSession.value;
+    if (finalSession === "auto") {
+      finalSession = detectSessionFromTime(els.tradeEntryTime.value);
+    }
+    
     const tradeData = {
       id: tradeId,
       accountId: els.tradeAccount.value,
@@ -390,9 +438,12 @@ function initTradeEntry() {
       rMultiple: 0,
       result,
       date: els.tradeDate.value,
+      entryTime: els.tradeEntryTime.value || "",
+      exitTime: els.tradeExitTime.value || "",
       strategy: els.tradeStrategy.value || "None",
       setup: els.tradeSetup.value || "None",
       timeframe: els.tradeTimeframe.value,
+      session: finalSession,
       emotionBefore: els.tradeEmotionBefore.value,
       emotionAfter: els.tradeEmotionAfter.value,
       confidence: parseInt(els.tradeConfidence.value),
@@ -477,6 +528,9 @@ function initTradeEntry() {
 
   // Initialize custom tag system
   initCustomTagSystem();
+  
+  // Setup auto-session detection from entry time
+  setupAutoSessionDetect();
 }
 
 export {

@@ -7,19 +7,17 @@ console.log("[ApexTrader] Module loading...");
 import { state, els, initAppUI, loadInitialData, filterDataAndRefresh, showNotification, flashSaveIndicator, initThemes, initCallbacks, refreshCallbacks } from "./modules/core.js";
 import { initAuth, checkAuthSession } from "./modules/auth.js";
 import { setupNavigation, setupMobileSidebar, setupMobileFilterToggle, switchTab, registerPageRenderers } from "./modules/navigation.js";
-import { renderDashboard, renderDashboardCharts, renderDashboardWidgets, renderHeatmap, renderEconomicCalendar, renderSessionClocks, updateLiveClock } from "./modules/dashboard.js";
+import { renderDashboard, renderDashboardCharts, renderDashboardWidgets, renderHeatmap, renderEconomicCalendar, renderSessionClocks, updateLiveClock, setupDashboardListeners } from "./modules/dashboard.js";
 import { initTradeEntry, initCustomTagSystem, reloadCustomTags, renderChecklistSection, renderGoalsSection } from "./modules/trade-entry.js";
 import { initTradeHistory, renderHistoryPage } from "./modules/trade-history.js";
-import { initAnalytics, renderAnalyticsReports } from "./modules/analytics.js";
 import { initBacktest, renderBacktestPage } from "./modules/backtest.js";
 import { initNotes, renderNotesTimeline } from "./modules/notes.js";
 import { initAccounts, renderAccountsPage } from "./modules/accounts.js";
 import { initSettings, renderDataDiagnostics, renderFirebaseLogs } from "./modules/settings.js";
-import { initAiCoach, renderAiCoachPage } from "./modules/ai-coach.js";
-import { initPsychology, renderPsychologyPage } from "./modules/psychology.js";
 import { initModals, openTradeDetails, openCalendarDayTrades } from "./modules/modals.js";
 import { getAccountCurrency } from "./modules/core.js";
 import { renderCalendar } from "./calendar.js";
+import { initSessionAnalysis, renderSessionAnalysis, renderDashboardSessionSummary } from "./modules/session-analysis.js";
 
 // --- Register page renderers for navigation ---
 registerPageRenderers({
@@ -27,9 +25,7 @@ registerPageRenderers({
     renderDashboardCharts();
     renderDashboardWidgets();
   },
-  analyticsPage: () => renderAnalyticsReports(),
-  aiCoachPage: () => renderAiCoachPage(),
-  psychologyPage: () => renderPsychologyPage(),
+  sessionPage: () => renderSessionAnalysis(),
   backtestPage: () => renderBacktestPage(),
   calendarPage: () => {
     const today = new Date();
@@ -66,14 +62,13 @@ document.addEventListener("DOMContentLoaded", () => {
     initAuth();
     initTradeEntry();
     initTradeHistory();
-    initAnalytics();
     initBacktest();
     initNotes();
     initAccounts();
     initSettings();
-    initAiCoach();
-    initPsychology();
     initModals();
+    initSessionAnalysis();
+    setupDashboardListeners();
 
     // Custom tags + auth session
     initCustomTagSystem();
@@ -91,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshCallbacks.renderGoalsSection = renderGoalsSection;
     refreshCallbacks.renderDashboardCharts = renderDashboardCharts;
     refreshCallbacks.renderDashboardWidgets = renderDashboardWidgets;
-    refreshCallbacks.renderAnalyticsReports = renderAnalyticsReports;
     refreshCallbacks.openCalendarDayTrades = openCalendarDayTrades;
 
     checkAuthSession();

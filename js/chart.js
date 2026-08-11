@@ -955,3 +955,158 @@ export function renderBtStrategyPerformance(labels, wins, losses) {
     }
   });
 }
+
+// ==============================
+// --- SESSION ANALYSIS CHARTS ---
+// ==============================
+
+// SESSION DEFINITIONS (IST times)
+export const SESSIONS = {
+  Tokyo: { label: "Tokyo", time: "5:30-11:30 IST", color: "#6366f1", startHour: 5.5, endHour: 11.5 },
+  London: { label: "London", time: "12:00-19:00 IST", color: "#10b981", startHour: 12, endHour: 19 },
+  "New York": { label: "New York", time: "13:00-19:00 IST", color: "#f59e0b", startHour: 13, endHour: 19 },
+  Asian: { label: "Asian/Osaka", time: "19:00-1:30 IST", color: "#ef4444", startHour: 19, endHour: 25.5 },
+  Overlap: { label: "London-NY Overlap", time: "13:00-19:00 IST", color: "#ec4899", startHour: 13, endHour: 19 }
+};
+
+// Helper: Calculate session stats from trades
+export function calculateSessionStats(trades) {
+  const stats = {};
+  Object.keys(SESSIONS).forEach(s => {
+    stats[s] = { wins: 0, losses: 0, breakeven: 0, totalPnl: 0, trades: 0, strategies: {} };
+  });
+
+  trades.forEach(t => {
+    const session = t.session || "None";
+    if (!stats[session]) {
+      stats[session] = { wins: 0, losses: 0, breakeven: 0, totalPnl: 0, trades: 0, strategies: {} };
+    }
+    stats[session].trades++;
+    if (t.result === "Win") stats[session].wins++;
+    else if (t.result === "Loss") stats[session].losses++;
+    else stats[session].breakeven++;
+    stats[session].totalPnl += t.pnl;
+
+    // Track strategy performance per session
+    const strat = t.strategy || "None";
+    if (!stats[session].strategies[strat]) {
+      stats[session].strategies[strat] = { wins: 0, losses: 0, pnl: 0, trades: 0 };
+    }
+    stats[session].strategies[strat].trades++;
+    stats[session].strategies[strat].pnl += t.pnl;
+    if (t.result === "Win") stats[session].strategies[strat].wins++;
+    else if (t.result === "Loss") stats[session].strategies[strat].losses++;
+  });
+
+  return stats;
+}
+
+// 14. SESSION WIN RATE DOUGHNUT CHART
+export function renderSessionWinRateChart(canvasId, trades) {
+  destroyChartIfExists(canvasId);
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+
+  const stats = calculateSessionStats(trades);
+  const labels = [];
+  const winRates = [];
+  const colors = [];
+
+  Object.entries(SESSIONS).forEach(([key, sess]) => {
+    const s = stats[key];
+    if (s && s.trades > 0) {
+      labels.push(sess.label);
+      const wr = s.trades ? ((s.wins / s.trades) * 100) : 0;
+      winRates.push(parseFloat(wr.toFixed(1)));
+      colors.push(sess.color);
+    }
+  });
+
+  if (labels.length === 0) {
+    labels.push("No Data");
+    winRates.push(1);
+    colors.push("rgba(255,255,255,0.1)");
+  }
+
+  charts[canvasId] = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [{
+        data: winRates,
+        backgroundColor: colors,
+        borderColor: "#12161f",
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { color: "#94a3b8", font: { family: "'Inter', sans-serif", size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: "#12161f",
+          bodyColor: "#94a3b8",
+          callbacks: {
+            label: function(context) {
+              return `${context.label}: ${context.parsed}% Win Rate`;
+            }
+          }
+        }
+      },
+      cutout: "65%"
+    }
+  });
+}
+
+// 15. SESSION PNL BAR CHART
+export function renderSessionPnlChart(canvasId, trades) {
+  destroyChartIfExists(canvasId);
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+
+  const stats = calculateSessionStats(trades);
+  const labels = [];
+  const pnlValues = [];
+  const bgColors = [];
+
+  Object.entries(SESSIONS).forEach(([key, sess]) => {
+    const s = stats[key];
+    if (s && s.trades > 0) {
+      labels.push(sess.label);
+      pnlValues.push(parseFloat(s.totalPnl.toFixed(2)));
+      bgColors.push(s.totalPnl >= 0 ? "rgba(16, 185, 129, 0.7)" : "rgba(239, 68, 68, 0.7)");
+    }
+  });
+
+  charts[canvasId] = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Net PnL",
+        data: pnlValues,
+        backgroundColor: bgColors,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      ...chartThemeOptions,
+      plugins: {
+        ...chartThemeOptions.plugins,
+        tooltip: {
+          ...chartThemeOptions.plugins.tooltip,
+          callbacks: {
+            label: function(context) {
+              const val = context.parsed.y;
+              return `Net: ${val >= 0 ? '+' : '-'}$${Math.abs(val).toFixed(2)}`;
+            }
+          }
+        }
+      }
+    }
+  });
+}

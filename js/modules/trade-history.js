@@ -13,6 +13,7 @@ function setupFilterListeners() {
   els.filterResult.addEventListener("change", triggerHistoryFilter);
   els.filterStrategy.addEventListener("change", triggerHistoryFilter);
   els.filterTimeframe.addEventListener("change", triggerHistoryFilter);
+  els.filterSession.addEventListener("change", triggerHistoryFilter);
 }
 
 function setupViewModeToggle() {
@@ -38,6 +39,7 @@ export function renderHistoryPage() {
   const resVal = els.filterResult.value;
   const stratVal = els.filterStrategy.value;
   const tfVal = els.filterTimeframe.value;
+  const sessVal = els.filterSession.value;
 
   // Extract Strategy lists for filter dropdown
   const strategies = new Set();
@@ -64,14 +66,15 @@ export function renderHistoryPage() {
     const matchesResult = resVal === "all" || t.result === resVal;
     const matchesStrategy = stratVal === "all" || t.strategy === stratVal;
     const matchesTimeframe = tfVal === "all" || t.timeframe === tfVal;
+    const matchesSession = sessVal === "all" || (t.session || "None") === sessVal;
 
-    return matchesSearch && matchesAccount && matchesResult && matchesStrategy && matchesTimeframe;
+    return matchesSearch && matchesAccount && matchesResult && matchesStrategy && matchesTimeframe && matchesSession;
   });
 
   // 1. Render Table View
   els.historyTable.innerHTML = "";
   if (filtered.length === 0) {
-    els.historyTable.innerHTML = `<tr><td colspan="11" class="text-center text-muted">No trades match the selected filters.</td></tr>`;
+    els.historyTable.innerHTML = `<tr><td colspan="12" class="text-center text-muted">No trades match the selected filters.</td></tr>`;
   } else {
     filtered.forEach(t => {
       let badgeClass = "badge-breakeven";
@@ -80,13 +83,15 @@ export function renderHistoryPage() {
 
       const accountName = state.accounts.find(a => a.id === t.accountId)?.name || "Unknown";
       const tSym = getCurrencySymbol(getAccountCurrency(t.accountId));
+      const sessionName = t.session || "None";
 
       els.historyTable.innerHTML += `
         <tr>
-          <td>${t.date} <span class="text-xs text-muted">${t.time || ''}</span></td>
+          <td>${t.date} <span class="text-xs text-muted">${t.entryTime || t.time || ''}</span></td>
           <td><span class="text-xs text-light font-semibold">${accountName}</span></td>
           <td><strong class="text-accent">${t.asset}</strong></td>
           <td><span class="${t.type === 'Buy' ? 'text-success' : 'text-danger'} font-bold text-xs">${t.type.toUpperCase()}</span></td>
+          <td><span class="badge badge-win text-xs">${sessionName}</span></td>
           <td>${tSym}${t.entryPrice.toFixed(5).replace(/\.?0+$/, '')}</td>
           <td>${tSym}${t.exitPrice.toFixed(5).replace(/\.?0+$/, '')}</td>
           <td>${t.quantity.toLocaleString()}</td>
@@ -136,6 +141,7 @@ export function renderHistoryPage() {
             <div><span class="text-muted">Entry:</span> <strong>$${t.entryPrice}</strong></div>
             <div><span class="text-muted">Exit:</span> <strong>$${t.exitPrice}</strong></div>
             <div><span class="text-muted">Strategy:</span> <span class="font-bold text-accent">${t.strategy}</span></div>
+            <div><span class="text-muted">Session:</span> <span class="font-bold text-accent">${t.session || 'None'}</span></div>
             <div><span class="text-muted">R Multiple:</span> <strong class="text-light">${t.rMultiple ? t.rMultiple.toFixed(2) + 'R' : '-'}</strong></div>
           </div>
 
@@ -173,11 +179,15 @@ window.duplicateTradeTrigger = function(tradeId) {
     els.tradeExitPrice.value = trade.exitPrice;
     els.tradeQuantity.value = trade.quantity;
     els.tradeCommission.value = trade.commission || 0;
+    els.tradeDate.value = trade.date;
+    els.tradeEntryTime.value = trade.entryTime || "";
+    els.tradeExitTime.value = trade.exitTime || "";
     els.tradeStrategy.value = trade.strategy || "";
     els.tradeSetup.value = trade.setup || "";
     window.renderStrategies();
     window.renderSetups();
     els.tradeTimeframe.value = trade.timeframe;
+    els.tradeSession.value = trade.session || "None";
     
     showNotification("Trade properties duplicated into entry form.", "info");
     switchTab("entryPage");

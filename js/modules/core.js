@@ -198,6 +198,8 @@ export const els = {
   tradeQuantity: document.getElementById("tradeQuantity"),
   tradeCommission: document.getElementById("tradeCommission"),
   tradeDate: document.getElementById("tradeDate"),
+  tradeEntryTime: document.getElementById("tradeEntryTime"),
+  tradeExitTime: document.getElementById("tradeExitTime"),
   tradeStrategy: document.getElementById("tradeStrategy"),
   tradeSetup: document.getElementById("tradeSetup"),
   strategyInput: document.getElementById("strategyInput"),
@@ -207,6 +209,7 @@ export const els = {
   savedStrategies: document.getElementById("savedStrategies"),
   savedSetups: document.getElementById("savedSetups"),
   tradeTimeframe: document.getElementById("tradeTimeframe"),
+  tradeSession: document.getElementById("tradeSession"),
   tradeEmotionBefore: document.getElementById("tradeEmotionBefore"),
   tradeEmotionAfter: document.getElementById("tradeEmotionAfter"),
   tradeConfidence: document.getElementById("tradeConfidence"),
@@ -236,6 +239,7 @@ export const els = {
   filterResult: document.getElementById("filterResult"),
   filterStrategy: document.getElementById("filterStrategy"),
   filterTimeframe: document.getElementById("filterTimeframe"),
+  filterSession: document.getElementById("filterSession"),
   viewModeTable: document.getElementById("viewModeTable"),
   viewModeCard: document.getElementById("viewModeCard"),
   historyTableView: document.getElementById("historyTableView"),
@@ -338,6 +342,30 @@ export const els = {
   psyEmotionTable: $tbody("psyEmotionTable"),
   psyBreachesLog: document.getElementById("psyBreachesLog"),
   psyLessonsList: document.getElementById("psyLessonsList"),
+  
+  // Session Analysis elements
+  sessionBest: document.getElementById("sessionBest"),
+  sessionBestInfo: document.getElementById("sessionBestInfo"),
+  sessionBestPnl: document.getElementById("sessionBestPnl"),
+  sessionBestTrades: document.getElementById("sessionBestTrades"),
+  sessionWorst: document.getElementById("sessionWorst"),
+  sessionWorstInfo: document.getElementById("sessionWorstInfo"),
+  sessionAvgPnl: document.getElementById("sessionAvgPnl"),
+  sessionTotalTrades: document.getElementById("sessionTotalTrades"),
+  sessionTableBody: $tbody("sessionTableBody"),
+  strategyMatrixBody: $tbody("strategyMatrixBody"),
+  sessionRecommendationsList: document.getElementById("sessionRecommendationsList"),
+  dashTokyoWr: document.getElementById("dashTokyoWr"),
+  dashTokyoPnl: document.getElementById("dashTokyoPnl"),
+  dashLondonWr: document.getElementById("dashLondonWr"),
+  dashLondonPnl: document.getElementById("dashLondonPnl"),
+  dashNewYorkWr: document.getElementById("dashNewYorkWr"),
+  dashNewYorkPnl: document.getElementById("dashNewYorkPnl"),
+  dashAsianWr: document.getElementById("dashAsianWr"),
+  dashAsianPnl: document.getElementById("dashAsianPnl"),
+  detailSession: document.getElementById("detailSession"),
+  detailEntryTime: document.getElementById("detailEntryTime"),
+  detailExitTime: document.getElementById("detailExitTime"),
   
   // Floating AI Coach elements
   floatingAiPanel: document.getElementById("floatingAiPanel"),
@@ -560,8 +588,6 @@ export function filterDataAndRefresh() {
   if (state.currentTab === "dashboardPage") {
     if (cb.renderDashboardCharts) cb.renderDashboardCharts();
     if (cb.renderDashboardWidgets) cb.renderDashboardWidgets();
-  } else if (state.currentTab === "analyticsPage") {
-    if (cb.renderAnalyticsReports) cb.renderAnalyticsReports();
   } else if (state.currentTab === "calendarPage") {
     const today = new Date();
     const calCurrency = state.activeAccountId !== "all" ? getAccountCurrency(state.activeAccountId) : (state.accounts[0]?.currency || "USD");

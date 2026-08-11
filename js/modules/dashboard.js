@@ -1,5 +1,7 @@
 import { state, els, getAccountCurrency, getCurrencySymbol, showNotification } from './core.js';
 import { renderEquityCurve, renderWinLossPie } from '../chart.js';
+import { renderDashboardSessionSummary } from './session-analysis.js';
+import { switchTab } from './navigation.js';
 
 // --- RENDER PAGE: DASHBOARD ---
 export function renderDashboard() {
@@ -210,6 +212,18 @@ export function renderDashboard() {
 
   // Draw Heatmap Grid
   renderHeatmap();
+  
+  // Render Session Summary on Dashboard
+  renderDashboardSessionSummary();
+  
+  // Render Strategy Performance Summary
+  renderDashboardStrategySummary();
+  
+  // Render Trading Quality Score
+  renderDashboardQualityScore();
+  
+  // Render All Trades List
+  renderDashboardAllTrades();
 }
 
 // Render Dashboard Charts
@@ -395,4 +409,205 @@ export function updateLiveClock() {
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
   if (els.headerLiveTime) els.headerLiveTime.innerText = timeStr;
+}
+
+// --- RENDER STRATEGY PERFORMANCE SUMMARY ON DASHBOARD ---
+export function renderDashboardStrategySummary() {
+  const tbody = document.getElementById("dashStrategyBody");
+  if (!tbody) return;
+  
+  const trades = state.trades;
+  if (trades.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No trades logged yet.</td></tr>`;
+    return;
+  }
+
+  // Group by strategy
+  const strategies = {};
+  trades.forEach(t => {
+    const strat = t.strategy || "None";
+    if (!strategies[strat]) {
+      strategies[strat] = { wins: 0, losses: 0, breakeven: 0, totalPnl: 0, trades: 0 };
+    }
+    strategies[strat].trades++;
+    if (t.result === "Win") strategies[strat].wins++;
+    else if (t.result === "Loss") strategies[strat].losses++;
+    else strategies[strat].breakeven++;
+    strategies[strat].totalPnl += t.pnl;
+  });
+
+  // Sort by total PnL descending
+  const sorted = Object.entries(strategies).sort((a, b) => b[1].totalPnl - a[1].totalPnl);
+
+  tbody.innerHTML = "";
+  sorted.forEach(([name, s]) => {
+    const wr = s.trades ? ((s.wins / s.trades) * 100).toFixed(1) : "0.0";
+    const avgPnl = s.trades ? (s.totalPnl / s.trades) : 0;
+    const wrNum = parseFloat(wr);
+    
+    let statusBadge = "";
+    if (wrNum >= 60) statusBadge = `<span class="badge badge-win" style="font-size:0.65rem;">PROFITABLE</span>`;
+    else if (wrNum >= 50) statusBadge = `<span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:0.65rem;">BREAKEVEN</span>`;
+    else statusBadge = `<span class="badge badge-loss" style="font-size:0.65rem;">LOSING</span>`;
+
+    const pnlColor = s.totalPnl >= 0 ? "text-success" : "text-danger";
+    const wrColor = wrNum >= 50 ? "text-success" : "text-danger";
+
+    tbody.innerHTML += `
+      <tr>
+        <td><strong class="text-accent">${name}</strong></td>
+        <td class="font-semibold">${s.trades}</td>
+        <td class="font-semibold text-success">${s.wins}</td>
+        <td class="font-bold ${wrColor}">${wr}%</td>
+        <td class="font-bold ${pnlColor}">${s.totalPnl >= 0 ? '+' : '-'}$${Math.abs(s.totalPnl).toFixed(2)}</td>
+        <td class="text-sm ${avgPnl >= 0 ? 'text-success' : 'text-danger'}">${avgPnl >= 0 ? '+' : '-'}$${Math.abs(avgPnl).toFixed(2)}</td>
+        <td>${statusBadge}</td>
+      </tr>
+    `;
+  });
+}
+
+// --- RENDER TRADING QUALITY SCORE ON DASHBOARD ---
+export function renderDashboardQualityScore() {
+  const trades = state.trades;
+  if (trades.length === 0) return;
+
+  const wins = trades.filter(t => t.result === "Win").length;
+  const losses = trades.filter(t => t.result === "Loss").length;
+  const total = wins + losses;
+  const winRate = total ? (wins / total) * 100 : 0;
+
+  // Profit Factor
+  let grossProfit = 0;
+  let grossLoss = 0;
+  trades.forEach(t => {
+    if (t.pnl > 0) grossProfit += t.pnl;
+    else if (t.pnl < 0) grossLoss += Math.abs(t.pnl);
+  });
+  const profitFactor = grossLoss ? grossProfit / grossLoss : (grossProfit ? 99.9 : 0);
+
+  // Avg Win vs Avg Loss
+  const avgWin = wins ? grossProfit / wins : 0;
+  const avgLoss = losses ? grossLoss / losses : 0;
+  const riskRewardRatio = avgLoss ? avgWin / avgLoss : 0;
+
+  // Discipline Score
+  const disciplineTrades = trades.filter(t => t.discipline);
+  const avgDiscipline = disciplineTrades.length ? disciplineTrades.reduce((s, t) => s + t.discipline, 0) / disciplineTrades.length : 0;
+
+  // Mistake Rate
+  const tradesWithMistakes = trades.filter(t => t.mistakes && t.mistakes.length > 0).length;
+  const mistakeRate = trades.length ? (tradesWithMistakes / trades.length) * 100 : 0;
+
+  // Overall Score (0-100)
+  let score = 0;
+  // Win Rate (30 points)
+  score += Math.min((winRate / 60) * 30, 30);
+  // Profit Factor (25 points)
+  score += Math.min((profitFactor / 2) * 25, 25);
+  // Risk Reward (25 points)
+  score += Math.min((riskRewardRatio / 2) * 25, 25);
+  // Discipline (10 points)
+  score += (avgDiscipline / 5) * 10;
+  // Low Mistakes (10 points)
+  score += Math.max(10 - (mistakeRate / 10), 0);
+
+  // Update DOM
+  const qwWinRate = document.getElementById("qwWinRate");
+  const qwProfitFactor = document.getElementById("qwProfitFactor");
+  const qwRiskReward = document.getElementById("qwRiskReward");
+  const qwDiscipline = document.getElementById("qwDiscipline");
+  const qwMistakes = document.getElementById("qwMistakes");
+  const qwOverall = document.getElementById("qwOverall");
+  const qwVerdict = document.getElementById("qwVerdict");
+  const qwOverallBox = document.getElementById("qwOverallBox");
+
+  if (qwWinRate) {
+    qwWinRate.innerText = winRate.toFixed(1) + "%";
+    qwWinRate.className = `font-bold ${winRate >= 50 ? 'text-success' : 'text-danger'}`;
+  }
+  if (qwProfitFactor) {
+    qwProfitFactor.innerText = profitFactor.toFixed(2);
+    qwProfitFactor.className = `font-bold ${profitFactor >= 1.5 ? 'text-success' : profitFactor >= 1 ? 'text-warning' : 'text-danger'}`;
+  }
+  if (qwRiskReward) {
+    qwRiskReward.innerText = riskRewardRatio.toFixed(2) + "R";
+    qwRiskReward.className = `font-bold ${riskRewardRatio >= 1.5 ? 'text-success' : riskRewardRatio >= 1 ? 'text-warning' : 'text-danger'}`;
+  }
+  if (qwDiscipline) {
+    qwDiscipline.innerText = avgDiscipline.toFixed(1) + "/5";
+    qwDiscipline.className = `font-bold ${avgDiscipline >= 4 ? 'text-success' : avgDiscipline >= 3 ? 'text-warning' : 'text-danger'}`;
+  }
+  if (qwMistakes) {
+    qwMistakes.innerText = mistakeRate.toFixed(0) + "%";
+    qwMistakes.className = `font-bold ${mistakeRate <= 20 ? 'text-success' : mistakeRate <= 40 ? 'text-warning' : 'text-danger'}`;
+  }
+  if (qwOverall) {
+    qwOverall.innerText = score.toFixed(0) + "/100";
+    if (score >= 70) {
+      qwOverall.className = "text-2xl font-bold text-success";
+      qwVerdict.innerText = "Great trading! Keep it up!";
+      qwOverallBox.style.background = "rgba(16,185,129,0.1)";
+      qwOverallBox.style.borderColor = "rgba(16,185,129,0.3)";
+    } else if (score >= 50) {
+      qwOverall.className = "text-2xl font-bold text-warning";
+      qwVerdict.innerText = "Decent. Room for improvement.";
+      qwOverallBox.style.background = "rgba(245,158,11,0.1)";
+      qwOverallBox.style.borderColor = "rgba(245,158,11,0.3)";
+    } else {
+      qwOverall.className = "text-2xl font-bold text-danger";
+      qwVerdict.innerText = "Focus on discipline & strategy.";
+      qwOverallBox.style.background = "rgba(239,68,68,0.1)";
+      qwOverallBox.style.borderColor = "rgba(239,68,68,0.3)";
+    }
+  }
+}
+
+// --- RENDER ALL TRADES LIST ON DASHBOARD ---
+export function renderDashboardAllTrades() {
+  const tbody = document.getElementById("dashAllTradesBody");
+  if (!tbody) return;
+
+  const trades = state.trades;
+  if (trades.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No trades logged yet.</td></tr>`;
+    return;
+  }
+
+  // Sort by date descending (newest first)
+  const sorted = [...trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  tbody.innerHTML = "";
+  sorted.forEach((t, idx) => {
+    let badgeClass = "badge-breakeven";
+    if (t.result === "Win") badgeClass = "badge-win";
+    else if (t.result === "Loss") badgeClass = "badge-loss";
+
+    const sessionName = t.session || "None";
+    const stratName = t.strategy || "None";
+
+    tbody.innerHTML += `
+      <tr style="cursor:pointer;" onclick="openTradeDetails('${t.id}')">
+        <td class="text-xs text-muted">${sorted.length - idx}</td>
+        <td class="text-xs">${t.date}</td>
+        <td><strong class="text-accent">${t.asset}</strong></td>
+        <td><span class="${t.type === 'Buy' ? 'text-success' : 'text-danger'} font-bold text-xs">${t.type.toUpperCase()}</span></td>
+        <td class="text-xs">${stratName}</td>
+        <td class="text-xs">${sessionName}</td>
+        <td><span class="badge ${badgeClass}" style="font-size:0.65rem;">${t.result}</span></td>
+        <td class="${t.pnl >= 0 ? 'text-success' : 'text-danger'} font-bold text-sm">
+          ${t.pnl >= 0 ? '+' : '-'}$${Math.abs(t.pnl).toFixed(2)}
+        </td>
+      </tr>
+    `;
+  });
+}
+
+// --- SETUP DASHBOARD EVENT LISTENERS ---
+export function setupDashboardListeners() {
+  if (els.dashViewAllTradesBtn) {
+    els.dashViewAllTradesBtn.addEventListener("click", () => {
+      switchTab("historyPage");
+    });
+  }
 }

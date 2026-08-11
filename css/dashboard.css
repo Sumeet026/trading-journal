@@ -278,6 +278,7 @@ body {
 
 /* UI Utilities & Grid */
 .grid-cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.grid-cols-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
 .grid-cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .grid-cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .grid-cols-12 { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
@@ -287,6 +288,8 @@ body {
 .col-span-6 { grid-column: span 6; }
 .col-span-3 { grid-column: span 3; }
 .col-span-9 { grid-column: span 9; }
+.col-span-7 { grid-column: span 7; }
+.col-span-5 { grid-column: span 5; }
 
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
@@ -1269,9 +1272,10 @@ select.input-control option:selected {
 /* ===== TABLET (max-width: 1024px) ===== */
 @media (max-width: 1024px) {
   .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-cols-5 { grid-template-columns: repeat(2, 1fr); }
   .grid-cols-2 { grid-template-columns: 1fr; }
   .grid-cols-3 { grid-template-columns: 1fr 1fr; }
-  .col-span-8, .col-span-4, .col-span-6, .col-span-3, .col-span-9 { grid-column: span 12; }
+  .col-span-8, .col-span-4, .col-span-6, .col-span-3, .col-span-9, .col-span-5, .col-span-7 { grid-column: span 12; }
   .header-actions { gap: 10px; }
   .header-actions select.input-control { min-width: 150px; }
 }
@@ -1448,6 +1452,7 @@ select.input-control option:selected {
 
   /* --- GRID SYSTEM --- */
   .grid-cols-4 { grid-template-columns: 1fr; }
+  .grid-cols-5 { grid-template-columns: 1fr; }
   .grid-cols-3 { grid-template-columns: 1fr; }
   .grid-cols-2 { grid-template-columns: 1fr; }
   .grid-cols-12 { grid-template-columns: 1fr; }
@@ -1554,6 +1559,7 @@ select.input-control option:selected {
   /* --- TRADE FORM GRIDS --- */
   #tradeForm .grid-cols-3,
   #tradeForm .grid-cols-4,
+  #tradeForm .grid-cols-5,
   #tradeForm .grid-cols-2 {
     grid-template-columns: 1fr;
   }
@@ -1643,7 +1649,9 @@ select.input-control option:selected {
   }
 
   /* --- DASHBOARD BOTTOM GRID --- */
-  .grid-cols-12 > .col-span-6 {
+  .grid-cols-12 > .col-span-6,
+  .grid-cols-12 > .col-span-4,
+  .grid-cols-12 > .col-span-8 {
     grid-column: span 1;
   }
 
@@ -1656,6 +1664,12 @@ select.input-control option:selected {
 
   #analyticsPage .flex.gap-4 {
     flex-direction: column;
+  }
+
+  /* --- SESSION ANALYSIS PAGE --- */
+  #sessionPage .grid-cols-12 > .col-span-5,
+  #sessionPage .grid-cols-12 > .col-span-7 {
+    grid-column: span 1;
   }
 
   /* --- PSYCHOLOGY PAGE --- */

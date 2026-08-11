@@ -46,6 +46,9 @@ export function openTradeDetails(tradeId) {
   els.detailStrategy.innerText = t.strategy || "None Tagged";
   els.detailSetup.innerText = t.setup || "None Specified";
   els.detailTimeframe.innerText = t.timeframe || "1H";
+  els.detailSession.innerText = t.session || "None";
+  els.detailEntryTime.innerText = t.entryTime || "Not recorded";
+  els.detailExitTime.innerText = t.exitTime || "Not recorded";
   els.detailEmotionBefore.innerText = t.emotionBefore || "Calm";
   els.detailEmotionAfter.innerText = t.emotionAfter || "Calm";
   els.detailRatings.innerText = `Confidence: ${t.confidence}/5 | Discipline: ${t.discipline}/5`;
