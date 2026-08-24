@@ -39,7 +39,7 @@ A premium dark-themed trading journal built with React, Chart.js, and Firebase. 
 ### Trade History
 - **Table View** - Full data table with all trade fields
 - **Card View** - Compact card layout for quick overview
-- **Filters** - Search, account, result, strategy, timeframe, session
+- **Filters** - Search, account, result, strategy, timeframe, session, date range (from/to)
 - **Actions** - View details, Edit, Duplicate, Delete per trade
 - **Detail Modal** - Full trade details with all fields and screenshot
 
@@ -49,8 +49,9 @@ A premium dark-themed trading journal built with React, Chart.js, and Firebase. 
 - **Deposit/Withdraw** - Quick action buttons per account
 - **Adjust Balance Sidebar** - Form to post deposits/withdrawals with memo
 - **Transaction History** - Recent transactions across all accounts
+- **Strategy & Trade Details** - Per-account breakdown showing strategy performance, long/short trade counts, win rate, and PnL per strategy
 - **Create/Edit/Delete** - Full account management with modal form
-- **Archive** - Archive/restore accounts
+- **Archive** - Archive/restore accounts with button on each card
 
 ### Session Analysis
 - **Session Tagging** - Auto-detect or manually select session per trade
@@ -66,6 +67,17 @@ A premium dark-themed trading journal built with React, Chart.js, and Firebase. 
   - Total PnL (green if profit, red if loss)
   - Visual performance progress bar
 - Sorted by highest PnL
+
+### Strategy Analysis (Dedicated Page)
+- **Account Filter** - View strategies for specific account or all accounts
+- **Overall Stats** - Total strategies, trades, win rate, total PnL, long/short counts
+- **Strategy Breakdown Table** - Per-strategy: trades, wins, losses, win rate, long/short counts with win rates, avg PnL, total PnL
+- **Expandable Strategy Details** - Click any strategy row to expand and see:
+  - Direction Performance (Long vs Short with separate win rates and PnL)
+  - Best / Worst Trade per strategy
+  - Setups used within the strategy
+  - Recent 5 trades with quick view link
+- **Per-Account Overview** - When viewing all accounts, shows strategy count and performance per account
 
 ### Trading Calendar
 - Monthly calendar with daily PnL visualization
@@ -117,6 +129,7 @@ trading-j/
 │       ├── Calendar.jsx            # Trading calendar
 │       ├── Notes.jsx               # Daily notes
 │       ├── Accounts.jsx            # Account management + balances
+│       ├── StrategyAnalysis.jsx    # Strategy breakdown with long/short details
 │       ├── Backtest.jsx            # Backtest journal
 │       └── Settings.jsx            # Theme, backup, profile
 ├── package.json
@@ -161,6 +174,11 @@ npm run build
 - Redesigned Accounts page with Adjust Balance sidebar
 - Added edit/duplicate buttons in Trade History
 - Balance shown next to account selector in header
+- Added archive button on each active account card
+- Added date range filter (from/to) in Trade History
+- Fixed theme persistence - theme now applies on page refresh without visiting Settings
+- Added Strategy & Trade Details section on Accounts page showing per-account strategy breakdown with long/short trade counts, win rate, and PnL
+- Added dedicated Strategy Analysis page with full strategy breakdown, expandable details, direction performance, and per-account overview
 
 ## License
 Private - For personal trading journal use only.

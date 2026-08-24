@@ -15,6 +15,7 @@ import Notes from './pages/Notes';
 import Accounts from './pages/Accounts';
 import Backtest from './pages/Backtest';
 import Settings from './pages/Settings';
+import StrategyAnalysis from './pages/StrategyAnalysis';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './index.css';
 
@@ -24,6 +25,21 @@ function AppContent() {
 
   useEffect(() => {
     migrateToUserScopedStorage();
+
+    const savedTheme = localStorage.getItem('tj_theme') || 'navy';
+    if (savedTheme !== 'navy') {
+      const THEME_VARS = {
+        emerald: { '--primary': '#10b981', '--primary-hover': '#059669', '--primary-glow': 'rgba(16,185,129,0.15)', '--bg-dark': '#050f0a', '--bg-card': '#0a1a12', '--bg-card-hover': '#0f2519', '--card-border': 'rgba(16,185,129,0.08)', '--card-border-hover': 'rgba(16,185,129,0.25)' },
+        cyberpunk: { '--primary': '#f59e0b', '--primary-hover': '#d97706', '--primary-glow': 'rgba(245,158,11,0.15)', '--bg-dark': '#0a0800', '--bg-card': '#1a1408', '--bg-card-hover': '#251e0f', '--card-border': 'rgba(245,158,11,0.08)', '--card-border-hover': 'rgba(245,158,11,0.25)' },
+        amethyst: { '--primary': '#a855f7', '--primary-hover': '#9333ea', '--primary-glow': 'rgba(168,85,247,0.15)', '--bg-dark': '#0a060f', '--bg-card': '#150d1e', '--bg-card-hover': '#1e1428', '--card-border': 'rgba(168,85,247,0.08)', '--card-border-hover': 'rgba(168,85,247,0.25)' },
+      };
+      const root = document.documentElement;
+      if (THEME_VARS[savedTheme]) {
+        root.setAttribute('data-theme', savedTheme);
+        Object.entries(THEME_VARS[savedTheme]).forEach(([prop, val]) => root.style.setProperty(prop, val));
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       dispatch({ type: 'SET_USER', payload: user });
       loadInitialData(user?.uid);
@@ -61,6 +77,7 @@ function AppContent() {
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/accounts" element={<Accounts />} />
+          <Route path="/strategy" element={<StrategyAnalysis />} />
           <Route path="/backtest" element={<Backtest />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

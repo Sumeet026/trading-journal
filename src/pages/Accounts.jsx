@@ -40,6 +40,7 @@ export default function Accounts() {
     await archiveAccount(id, archived);
     const accounts = await getAccounts();
     dispatch({ type: 'SET_ACCOUNTS', payload: accounts });
+    dispatch({ type: 'SET_NOTIFICATION', payload: { message: archived ? 'Account archived.' : 'Account restored.', type: 'success' } });
   };
 
   const getAccountStats = (acc) => {
@@ -101,6 +102,7 @@ export default function Accounts() {
                 <div key={acc.id} className="card-premium" style={{ position: 'relative' }}>
                   <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
                     <button className="btn btn-sm btn-icon btn-secondary" onClick={() => openEdit(acc)} title="Edit"><i className="fa fa-edit"></i></button>
+                    <button className="btn btn-sm btn-icon btn-secondary" onClick={() => handleArchive(acc.id, true)} title="Archive"><i className="fa fa-box-archive"></i></button>
                     <button className="btn btn-sm btn-icon btn-secondary text-danger" onClick={() => handleDelete(acc.id)} title="Delete"><i className="fa fa-trash-can"></i></button>
                   </div>
 

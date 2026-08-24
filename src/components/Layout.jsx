@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { path: '/calendar', label: 'Calendar', icon: 'fa-calendar-days' },
   { path: '/notes', label: 'Notes', icon: 'fa-note-sticky' },
   { path: '/accounts', label: 'Accounts', icon: 'fa-wallet' },
+  { path: '/strategy', label: 'Strategy', icon: 'fa-chess' },
   { path: '/backtest', label: 'Backtest', icon: 'fa-flask' },
   { path: '/settings', label: 'Settings', icon: 'fa-gear' },
 ];
@@ -24,6 +25,7 @@ const PAGE_TITLES = {
   '/calendar': 'Trading Calendar',
   '/notes': 'Daily Notes',
   '/accounts': 'Accounts',
+  '/strategy': 'Strategy Analysis',
   '/backtest': 'Backtest Journal',
   '/settings': 'Settings',
 };

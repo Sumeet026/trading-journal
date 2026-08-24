@@ -7,7 +7,7 @@ export default function TradeHistory() {
   const { state, dispatch } = useApp();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState('table');
-  const [filters, setFilters] = useState({ search: '', account: 'all', result: 'all', strategy: 'all', timeframe: 'all', session: 'all' });
+  const [filters, setFilters] = useState({ search: '', account: 'all', result: 'all', strategy: 'all', timeframe: 'all', session: 'all', dateFrom: '', dateTo: '' });
   const [detailTrade, setDetailTrade] = useState(null);
 
   const strategies = useMemo(() => {
@@ -25,6 +25,14 @@ export default function TradeHistory() {
       if (filters.strategy !== 'all' && t.strategy !== filters.strategy) return false;
       if (filters.timeframe !== 'all' && t.timeframe !== filters.timeframe) return false;
       if (filters.session !== 'all' && (t.session || 'None') !== filters.session) return false;
+      if (filters.dateFrom) {
+        const tradeDate = new Date(t.date);
+        if (tradeDate < new Date(filters.dateFrom)) return false;
+      }
+      if (filters.dateTo) {
+        const tradeDate = new Date(t.date);
+        if (tradeDate > new Date(filters.dateTo)) return false;
+      }
       return true;
     });
   }, [state.allTrades, filters]);
@@ -77,6 +85,8 @@ export default function TradeHistory() {
             <option value="all">All Sessions</option>
             {['Tokyo', 'London', 'New York', 'Asian', 'Overlap', 'None'].map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          <input className="input-control" type="date" style={{ maxWidth: '150px' }} value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="From date" />
+          <input className="input-control" type="date" style={{ maxWidth: '150px' }} value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="To date" />
           <div className="history-toggle-container">
             <button className={`history-toggle-btn ${viewMode === 'table' ? 'active' : ''}`} onClick={() => setViewMode('table')}><i className="fa-solid fa-table"></i></button>
             <button className={`history-toggle-btn ${viewMode === 'card' ? 'active' : ''}`} onClick={() => setViewMode('card')}><i className="fa-solid fa-grip"></i></button>
