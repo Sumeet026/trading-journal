@@ -146,15 +146,38 @@ export default function TradeEntry() {
     if (pnl > 0.05) result = 'Win';
     else if (pnl < -0.05) result = 'Loss';
 
+    const isImported = prefill?.source === 'mt5_import';
+    const pricesUnchanged = isImported
+      && ep === (parseFloat(prefill.entryPrice) || 0)
+      && xp === (parseFloat(prefill.exitPrice) || 0)
+      && qty === (parseFloat(prefill.quantity) || 0)
+      && comm === (Math.abs(parseFloat(prefill.commission)) || 0);
+    if (pricesUnchanged) {
+      pnl = parseFloat(prefill.pnl) || 0;
+      result = prefill.result || result;
+    }
+
     let session = form.session;
     if (session === 'auto') session = detectSession(form.entryTime);
 
     const trade = {
       ...form, id: form._editId || undefined, entryPrice: ep, exitPrice: xp, quantity: qty,
-      commission: comm, pnl, result, session, rMultiple: 0,
+      commission: comm, pnl, result, session,
+      rMultiple: pricesUnchanged ? (parseFloat(prefill.rMultiple) || 0) : 0,
       strategy: form.strategy || 'None', setup: form.setup || 'None',
       mistakes, screenshotUrl: screenshot,
       entryTime: form.entryTime, exitTime: form.exitTime,
+      source: isImported ? 'mt5_import' : (prefill?.source || 'manual'),
+      mt5PositionId: prefill?.mt5PositionId || '',
+      mt5Tickets: Array.isArray(prefill?.mt5Tickets) ? prefill.mt5Tickets : [],
+      importFingerprint: prefill?.importFingerprint || '',
+      needsReview: prefill?.needsReview || false,
+      reviewReasons: Array.isArray(prefill?.reviewReasons) ? prefill.reviewReasons : [],
+      isOpen: prefill?.isOpen || false,
+      entryReason: form.entryReason ?? prefill?.entryReason ?? '',
+      liquidity: form.liquidity ?? prefill?.liquidity ?? '',
+      poi: form.poi ?? prefill?.poi ?? '',
+      setupConfirmation: form.setupConfirmation ?? prefill?.setupConfirmation ?? '',
     };
 
     await saveTrade(trade);

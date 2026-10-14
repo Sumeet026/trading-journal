@@ -495,6 +495,17 @@ export async function saveTrade(trade) {
     mistakes: trade.mistakes || [],
     lessons: trade.lessons || "",
     screenshotUrl: trade.screenshotUrl || "",
+    entryReason: trade.entryReason || "",
+    liquidity: trade.liquidity || "",
+    poi: trade.poi || "",
+    setupConfirmation: trade.setupConfirmation || "",
+    source: trade.source || "manual",
+    mt5PositionId: trade.mt5PositionId || "",
+    mt5Tickets: Array.isArray(trade.mt5Tickets) ? trade.mt5Tickets : [],
+    importFingerprint: trade.importFingerprint || "",
+    needsReview: !!trade.needsReview,
+    reviewReasons: Array.isArray(trade.reviewReasons) ? trade.reviewReasons : [],
+    isOpen: !!trade.isOpen,
     updatedAt: new Date().toISOString()
   };
 

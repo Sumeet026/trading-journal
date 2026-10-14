@@ -1767,3 +1767,223 @@ select.input-control option:checked {
     width: 260px;
   }
 }
+/* ===== AI MT5 Screenshot Importer ===== */
+.mt5-dropzone-active {
+  border-color: var(--primary) !important;
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.mt5-shots {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.mt5-shot-thumb {
+  position: relative;
+  width: 130px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+
+.mt5-shot-thumb img {
+  width: 100%;
+  height: 74px;
+  object-fit: cover;
+  display: block;
+}
+
+.mt5-processing {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--primary-glow);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+}
+
+.mt5-spinner {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: mt5-spin 0.8s linear infinite;
+}
+
+@keyframes mt5-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mt5-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.mt5-banner i { line-height: 1; }
+
+.mt5-banner-error {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.mt5-banner-error p { color: var(--text-light); }
+
+.mt5-banner-warn {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.mt5-banner-success {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success);
+  align-items: flex-start;
+}
+
+.mt5-warnings {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mt5-warnings li {
+  font-size: 0.8rem;
+  color: var(--warning);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mt5-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  align-items: center;
+}
+
+.mt5-summary-bar strong { color: var(--text-main); }
+
+.mt5-table { min-width: 1150px; }
+
+.mt5-table td {
+  padding: 8px 10px;
+  vertical-align: middle;
+}
+
+.mt5-cell-input {
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  min-width: 78px;
+  border-radius: 6px;
+}
+
+.mt5-status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.mt5-row-selected {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.mt5-detail-row td {
+  background: rgba(255, 255, 255, 0.015);
+  white-space: normal;
+}
+
+.mt5-detail-panel { padding: 14px 6px; }
+
+.mt5-review-box {
+  border: 1px solid var(--warning-border);
+  background: var(--warning-bg);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.mt5-review-box ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--text-light);
+}
+
+.mt5-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--card-border);
+}
+
+.mt5-raw { margin-top: 12px; }
+
+.mt5-tips {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.mt5-confirm-list {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mt5-confirm-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.link-btn:hover { text-decoration: underline; }
+
+@media (max-width: 768px) {
+  .mt5-action-bar { flex-direction: column; align-items: stretch; }
+  .mt5-action-bar .btn { width: 100%; }
+  .mt5-shot-thumb { width: 96px; }
+}

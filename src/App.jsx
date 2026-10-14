@@ -9,6 +9,7 @@ import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import TradeEntry from './pages/TradeEntry';
 import TradeHistory from './pages/TradeHistory';
+import MT5Import from './pages/MT5Import';
 import SessionAnalysis from './pages/SessionAnalysis';
 import Calendar from './pages/Calendar';
 import Notes from './pages/Notes';
@@ -73,6 +74,7 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/entry" element={<TradeEntry />} />
           <Route path="/history" element={<TradeHistory />} />
+          <Route path="/import/mt5" element={<MT5Import />} />
           <Route path="/sessions" element={<SessionAnalysis />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/notes" element={<Notes />} />

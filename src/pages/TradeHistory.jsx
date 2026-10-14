@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { deleteTrade, getTrades, getAccounts } from '../lib/storage';
 
@@ -87,6 +87,9 @@ export default function TradeHistory() {
           </select>
           <input className="input-control" type="date" style={{ maxWidth: '150px' }} value={filters.dateFrom} onChange={e => updateFilter('dateFrom', e.target.value)} title="From date" />
           <input className="input-control" type="date" style={{ maxWidth: '150px' }} value={filters.dateTo} onChange={e => updateFilter('dateTo', e.target.value)} title="To date" />
+          <NavLink to="/import/mt5" className="btn btn-primary btn-sm" title="Import trades from an MT5 screenshot with AI">
+            <i className="fa-solid fa-file-import"></i> Import MT5 Screenshot
+          </NavLink>
           <div className="history-toggle-container">
             <button className={`history-toggle-btn ${viewMode === 'table' ? 'active' : ''}`} onClick={() => setViewMode('table')}><i className="fa-solid fa-table"></i></button>
             <button className={`history-toggle-btn ${viewMode === 'card' ? 'active' : ''}`} onClick={() => setViewMode('card')}><i className="fa-solid fa-grip"></i></button>
@@ -185,7 +188,11 @@ export default function TradeHistory() {
         <div className="modal-overlay active" onClick={() => setDetailTrade(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Trade Details: {detailTrade.asset} {detailTrade.type?.toUpperCase()}</h3>
+              <h3>
+                Trade Details: {detailTrade.asset} {detailTrade.type?.toUpperCase()}
+                {detailTrade.needsReview && <span className="badge badge-breakeven" style={{ marginLeft: '8px' }}>needs review</span>}
+                {detailTrade.source === 'mt5_import' && <span className="badge badge-win" style={{ marginLeft: '6px' }}>mt5 import</span>}
+              </h3>
               <button className="btn btn-sm btn-secondary" onClick={() => setDetailTrade(null)}>&times;</button>
             </div>
             <div className="modal-body">
@@ -205,6 +212,12 @@ export default function TradeHistory() {
                   ['Entry Time', detailTrade.entryTime || 'Not recorded'],
                   ['Exit Time', detailTrade.exitTime || 'Not recorded'],
                   ['Emotions', `${detailTrade.emotionBefore || '-'} → ${detailTrade.emotionAfter || '-'}`],
+                  ['Commission', detailTrade.commission || 0],
+                  ['Swap', detailTrade.swap || 0],
+                  ['Entry Reason', detailTrade.entryReason || 'Not set'],
+                  ['Liquidity (LQ)', detailTrade.liquidity || 'Not set'],
+                  ['POI', detailTrade.poi || 'Not set'],
+                  ['Setup Confirmation', detailTrade.setupConfirmation || 'Not set'],
                 ].map(([label, val], i) => (
                   <div key={i}>
                     <span className="text-xs text-muted">{label}:</span>
