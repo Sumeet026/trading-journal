@@ -93,6 +93,8 @@ const ERROR_HINTS = {
   INVALID_IMAGE: 'Only PNG and JPG screenshots up to 5MB are supported.',
   AI_AUTH: 'The server AI key was rejected. Update MT5_AI_API_KEY.',
   AI_RATE_LIMITED: 'The AI provider is busy. Wait a minute and retry.',
+  AI_TIMEOUT: 'The AI took too long to respond. Retry \u2014 your screenshots are never lost.',
+  HTTP_504: 'The server ran out of time processing this screenshot. Retry, or use a smaller/cropped screenshot.',
   NETWORK: 'Could not reach the server, or the AI request timed out. Check your connection and retry.',
 };
 

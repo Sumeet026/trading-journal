@@ -145,6 +145,7 @@ async function callGemini({ images, apiKey, model, withThinkingConfig }) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(40000),
   });
 
   let data = null;
@@ -197,6 +198,7 @@ export async function extractTrades({ images, apiKey, model, fetchImpl }) {
   for (const m of MODEL_FALLBACKS) if (!models.includes(m)) models.push(m);
 
   let lastError = null;
+  let timeouts = 0;
 
   for (const pass of [true, false]) {
     for (const candidate of models) {
@@ -224,6 +226,11 @@ export async function extractTrades({ images, apiKey, model, fetchImpl }) {
         const status = e.status;
         const msg = String(e.message || '');
         if (e.code === 'AI_BLOCKED') throw e;
+        if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+          timeouts += 1;
+          if (timeouts >= 2) throw makeError('AI_TIMEOUT', 504, 'The AI request timed out. Please retry.');
+          continue;
+        }
         if (status === 401 || status === 403) {
           throw makeError('AI_AUTH', 502, 'The AI API key was rejected. Check MT5_AI_API_KEY.');
         }
@@ -242,6 +249,9 @@ export async function extractTrades({ images, apiKey, model, fetchImpl }) {
     }
   }
 
+  if (lastError && (lastError.name === 'TimeoutError' || lastError.name === 'AbortError')) {
+    throw makeError('AI_TIMEOUT', 504, 'The AI request timed out. Please retry.');
+  }
   if (lastError?.code) throw lastError;
   const finalMsg = String(lastError?.message || 'Unknown AI error');
   throw makeError('AI_ERROR', 502, `AI extraction failed: ${finalMsg.slice(0, 300)}`);
