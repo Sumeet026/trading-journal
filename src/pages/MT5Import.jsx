@@ -92,7 +92,7 @@ const ERROR_HINTS = {
   RATE_LIMITED: 'Too many AI requests in a short time. Wait a minute and retry.',
   INVALID_IMAGE: 'Only PNG and JPG screenshots up to 5MB are supported.',
   AI_AUTH: 'The server AI key was rejected. Update MT5_AI_API_KEY.',
-  AI_RATE_LIMITED: 'The AI provider is busy. Wait a minute and retry.',
+  AI_RATE_LIMITED: 'Free-tier Gemini quota is low (20 requests per model per day). Retry after the reset shown above, or enable billing on your API key at ai.google.dev for higher limits.',
   AI_TIMEOUT: 'The AI took too long to respond. Retry \u2014 your screenshots are never lost.',
   HTTP_504: 'The server ran out of time processing this screenshot. Retry, or use a smaller/cropped screenshot.',
   NETWORK: 'Could not reach the server, or the AI request timed out. Check your connection and retry.',

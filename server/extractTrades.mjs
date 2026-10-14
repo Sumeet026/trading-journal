@@ -2,7 +2,23 @@ import { toNumber, normalizeSymbol } from '../src/lib/mt5Import.js';
 
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_MODEL = 'gemini-3.8-flash';
-const MODEL_FALLBACKS = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+const MODEL_FALLBACKS = [
+  'gemini-3.8-flash',
+  'gemini-flash-latest',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-flash-lite-latest',
+  'gemini-3.1-flash-lite',
+];
+
+function quotaWait(msg) {
+  const m = /retry in\s+(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/.exec(String(msg || ''));
+  if (!m || (!m[1] && !m[2] && !m[3])) return '';
+  if (m[1]) return `${m[1]}h${m[2] ? ` ${m[2]}m` : ''}`;
+  if (m[2]) return `${m[2]}m`;
+  return `${m[3]}s`;
+}
 
 const RESPONSE_SCHEMA = {
   type: 'OBJECT',
@@ -199,6 +215,9 @@ export async function extractTrades({ images, apiKey, model, fetchImpl }) {
 
   let lastError = null;
   let timeouts = 0;
+  let attempts = 0;
+  let rateLimited = 0;
+  let lastQuotaWait = '';
 
   for (const pass of [true, false]) {
     for (const candidate of models) {
@@ -223,6 +242,7 @@ export async function extractTrades({ images, apiKey, model, fetchImpl }) {
         };
       } catch (e) {
         lastError = e;
+        attempts += 1;
         const status = e.status;
         const msg = String(e.message || '');
         if (e.code === 'AI_BLOCKED') throw e;
@@ -235,12 +255,13 @@ export async function extractTrades({ images, apiKey, model, fetchImpl }) {
           throw makeError('AI_AUTH', 502, 'The AI API key was rejected. Check MT5_AI_API_KEY.');
         }
         if (status === 429) {
-          throw makeError('AI_RATE_LIMITED', 429, 'The AI provider is rate-limiting requests. Wait a minute and retry.');
+          rateLimited += 1;
+          const wait = quotaWait(msg);
+          if (wait) lastQuotaWait = wait;
+          continue;
         }
-        if (status === 400 && pass === true && /thinking/i.test(msg)) break;
-        if (status === 400 && !/thinking/i.test(msg)) {
-          throw makeError('AI_REQUEST', 502, `AI rejected the request: ${msg.slice(0, 300)}`);
-        }
+        if (status === 400 && pass === true) break;
+        if (status === 400) continue;
         if (status === 404 || status >= 500 || !status) continue;
         if (e.code === 'AI_EMPTY' || e.code === 'AI_BAD_JSON' || e.code === 'AI_TOO_MANY_ROWS') continue;
         if (e.code) throw e;
@@ -249,8 +270,18 @@ export async function extractTrades({ images, apiKey, model, fetchImpl }) {
     }
   }
 
+  if (attempts > 0 && rateLimited >= attempts) {
+    throw makeError(
+      'AI_RATE_LIMITED',
+      429,
+      `All AI models are rate-limited${lastQuotaWait ? ` \u2014 quota resets in about ${lastQuotaWait}` : ''}. Retry later, or enable billing on your Gemini API key for higher limits.`,
+    );
+  }
   if (lastError && (lastError.name === 'TimeoutError' || lastError.name === 'AbortError')) {
     throw makeError('AI_TIMEOUT', 504, 'The AI request timed out. Please retry.');
+  }
+  if (lastError?.status === 400) {
+    throw makeError('AI_REQUEST', 502, `AI rejected the request: ${String(lastError.message || '').slice(0, 300)}`);
   }
   if (lastError?.code) throw lastError;
   const finalMsg = String(lastError?.message || 'Unknown AI error');
